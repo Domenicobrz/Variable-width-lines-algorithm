@@ -427,6 +427,8 @@ var step = Float32Array.BYTES_PER_ELEMENT;
 var zRotSpeed = 0;
 var waveIncreaserSpeed = 0;
 function render(now) {
+    "use strict";
+    
     requestAnimationFrame(render);
 
     now *= 0.001;
@@ -470,14 +472,19 @@ function render(now) {
 
 
 function animateBufferData(now) {
+    "use strict";
+    
+
+    // if this doesn't look messy to you I don't know what will, just know we're animating the fancy circle you see on screen
+    // yeah yeah I know this thing should need a crazy code refactor but life is short and I need to learn other stuff too
     var vertices = [];
     var steps = Math.floor(effectController.lineNumber);
     var size = 10;
     for (var i = 0; i < steps; i++) {
-        var deg1 = i / steps * (Math.PI * 2);
+        var deg1 = i / steps       * (Math.PI * 2);
         var deg2 = (i + 1) / steps * (Math.PI * 2);
 
-        var deg3 = i / steps *       (Math.PI * effectController.nWaves * (Math.sin(now) * 0.5 + 0.5));
+        var deg3 = i / steps       * (Math.PI * effectController.nWaves * (Math.sin(now) * 0.5 + 0.5));
         var deg4 = (i + 1) / steps * (Math.PI * effectController.nWaves * (Math.sin(now) * 0.5 + 0.5));
         var mult1 = Math.sin(deg3) * 0.15;
         var mult2 = Math.sin(deg4) * 0.15;
@@ -491,15 +498,14 @@ function animateBufferData(now) {
         var z2 = 0.0;
 
         if (i === steps - 1) {
+            // last vertex of the circle will be joined to the first to close the path
             x2 = vertices[0];
             y2 = vertices[1];
             z2 = vertices[2];
         }
 
-
         vertices.push(x1, y1, z1, x2, y2, z2);
     }
-
 
 
     gl.bindBuffer(gl.ARRAY_BUFFER, MainProgram.buffer);
@@ -544,6 +550,8 @@ function createShaderFromSource(source, type, ctx) {
 }
 
 function initGui() {
+    "use strict";
+    
     var gui = new dat.GUI();
 
     window.effectController = {
@@ -579,7 +587,20 @@ function initGui() {
 
 
 var reusableBuffer = [0, 0, 0];
+/** every line is going to generate 3 triangles, 2 of them will form an expanded quad enclosing the line itself,
+ *  the third triangle will be used to create the bevel join. 
+ *  Keep in mind the third triangle is applied/positioned "at the end" of the line  
+ *  Triangulation could be summarized as follows: 
+ *   ______________
+ *  |              |\
+ *  |______________|_\
+ * 
+ *  the rectangle is formed from the first two triangles, and the rightmost triangle will create a bevel join
+ * 
+ * */
 function triangulateLines(lines) {
+    "use strict";
+    
     var buf = [];
 
     var length = lines.length / 6;
@@ -644,9 +665,11 @@ function triangulateLines(lines) {
 
 
 function constructTriangles(v1x, v1y, v1z, v2x, v2y, v2z, v3x, v3y, v3z, v4x, v4y, v4z, buffer) {
+    "use strict";
+    
     // structure of a vertex is as follow:
 
-    // current vertex - prev vertex - next vertex - ID
+    // current vertex: 3 floats - prev vertex: 3 floats - next vertex: 3 floats - ID: 1 float
     /*
            2 ______________ 4
             |              |
